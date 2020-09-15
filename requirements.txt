@@ -71,5 +71,5 @@ wikipedia>=1.4.0
 youtube-dl
 covid
 validators
-# for lydia 
+# for lydia AI
 coffeehouse
