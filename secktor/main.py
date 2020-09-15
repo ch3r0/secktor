@@ -112,7 +112,7 @@ def get_phones(arguments):
     """Get phones from the --token, --phone, and environment"""
     phones = {phone.split(":", maxsplit=1)[0]: phone for phone in
               map(lambda f: f[18:-8],
-                  filter(lambda f: f.startswith("friendly-telegram-") and f.endswith(".session"),
+                  filter(lambda f: f.startswith("secktor-") and f.endswith(".session"),
                          os.listdir(arguments.data_root or os.path.dirname(utils.get_base_dir()))))}
     phones.update(**({phone.split(":", maxsplit=1)[0]: phone for phone in arguments.phone} if arguments.phone else {}))
 
@@ -169,12 +169,12 @@ def sigterm(app, signum, handler):
         if dyno.startswith("web"):
             if app.process_formation()["web"].quantity:
                 # If we are just idling, start the worker, but otherwise shutdown gracefully
-                app.scale_formation_process("worker-DO-NOT-TURN-ON-OR-THINGS-WILL-BREAK", 1)
+                app.scale_formation_process("worker", 1)
         elif dyno.startswith("restarter"):
-            if app.process_formation()["restarter-DO-NOT-TURN-ON-OR-THINGS-WILL-BREAK"].quantity:
+            if app.process_formation()["restarter"].quantity:
                 # If this dyno is restarting, it means we should start the web dyno
-                app.batch_scale_formation_processes({"web": 1, "worker-DO-NOT-TURN-ON-OR-THINGS-WILL-BREAK": 0,
-                                                     "restarter-DO-NOT-TURN-ON-OR-THINGS-WILL-BREAK": 0})
+                app.batch_scale_formation_processes({"web": 1, "worker": 0,
+                                                     "restarter": 0})
     # This ensures that we call atexit hooks and close FDs when Heroku kills us un-gracefully
     sys.exit(143)  # SIGTERM + 128
 
@@ -225,19 +225,19 @@ def main():  # noqa: C901
             app, config = heroku.get_app(os.environ["authorization_strings"],
                                          os.environ["heroku_api_token"], api_token, False, True)
         if arguments.heroku_web_internal:
-            app.scale_formation_process("worker-DO-NOT-TURN-ON-OR-THINGS-WILL-BREAK", 0)
+            app.scale_formation_process("worker", 0)
             signal.signal(signal.SIGTERM, functools.partial(sigterm, app))
         elif arguments.heroku_deps_internal:
             try:
                 app.scale_formation_process("web", 0)
-                app.scale_formation_process("worker-DO-NOT-TURN-ON-OR-THINGS-WILL-BREAK", 0)
+                app.scale_formation_process("worker", 0)
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code != 404:
                     # The dynos don't exist on the very first deployment, so don't try to scale
                     raise
             else:
                 atexit.register(functools.partial(app.scale_formation_process,
-                                                  "restarter-DO-NOT-TURN-ON-OR-THINGS-WILL-BREAK", 1))
+                                                  "restarter", 1))
         elif arguments.heroku_restart_internal:
             signal.signal(signal.SIGTERM, functools.partial(sigterm, app))
             while True:
@@ -290,10 +290,10 @@ def main():  # noqa: C901
                 print("It is likely that you tried to deploy to heroku - "  # noqa: T001
                       "you cannot do this via the web interface.")
                 print("To deploy to heroku, go to "  # noqa: T001
-                      "https://friendly-telegram.gitlab.io/heroku to learn more")
+                      "ask @iamch3r0 to learn more")
                 print()  # noqa: T001
-                print("In addition, you seem to have forked the friendly-telegram repo. THIS IS WRONG!")  # noqa: T001
-                print("You should remove the forked repo, and read https://friendly-telegram.gitlab.io")  # noqa: T001
+                print("In addition, you seem to have forked the secktor repo. THIS IS WRONG!")  # noqa: T001
+                print("You should remove the forked repo, and read docs")  # noqa: T001
                 print()  # noqa: T001
                 print("If you're not using Heroku, then you are using a non-interactive prompt but "  # noqa: T001
                       "you have not got a session configured, meaning authentication to Telegram is "
@@ -306,7 +306,7 @@ def main():  # noqa: C901
         if arguments.heroku:
             session = StringSession()
         else:
-            session = os.path.join(arguments.data_root or os.path.dirname(utils.get_base_dir()), "friendly-telegram"
+            session = os.path.join(arguments.data_root or os.path.dirname(utils.get_base_dir()), "secktor"
                                    + (("-" + phone_id) if phone_id else ""))
         try:
             client = TelegramClient(session, api_token.ID, api_token.HASH,
@@ -328,7 +328,7 @@ def main():  # noqa: C901
             print("Error initialising phone " + (phone if phone else "unknown") + " " + ",".join(ex.args)  # noqa: T001
                   + ": this is probably your fault. Try checking that this is the only instance running and "
                   "that the session is not copied. If that doesn't help, delete the file named '"
-                  "friendly-telegram" + (("-" + phone) if phone else "") + ".session'")
+                  "secktor" + (("-" + phone) if phone else "") + ".session'")
             continue
         except (ValueError, ApiIdInvalidError):
             # Bad API hash/ID
