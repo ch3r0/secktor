@@ -31,7 +31,7 @@ COPY friendly-telegram/ /app/friendly-telegram
 COPY web-resources/ /app/web-resources
 
 WORKDIR /app
-RUN [ "python", "-Om", "friendly-telegram", "--no-web", "--no-auth", "--docker-deps-internal", "--data-root", "/data" ]
+RUN [ "python", "-Om", "secktor", "--no-web", "--no-auth", "--docker-deps-internal", "--data-root", "/data" ]
 
 STOPSIGNAL SIGINT
 
@@ -40,7 +40,7 @@ HEALTHCHECK CMD [ "python", "-O", "/app/healthcheck.py" ]
 
 ENV PORT=8080
 EXPOSE $PORT
-ENTRYPOINT [ "python", "-Om", "friendly-telegram", "--data-root", "/data" ]
+ENTRYPOINT [ "python", "-Om", "secktor", "--data-root", "/data" ]
 
 FROM main as test
 COPY test-requirements.txt .
