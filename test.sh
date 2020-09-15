@@ -1,4 +1,4 @@
-# CI test script
+#  CI test script
 
 python -m flake8 --statistics || exit $?
 if [ ! -z "$TEST_BOT_TOKEN" ]; then
